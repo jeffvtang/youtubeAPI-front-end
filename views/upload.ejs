@@ -1,31 +1,22 @@
 <html>
 
 <head>
-  <title>Google APIs - Sample JS Page</title>
+  <title>Upload a Youtube Video</title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
 </head>
 
 <body>
-
+  <%- include partials/navigation.ejs %>
+  <h1>Upload</h1>
   <script>
-    /***** START BOILERPLATE CODE: Load client library, authorize user. *****/
-
-    // Global variables for GoogleAuth object, auth status.
     var GoogleAuth;
     var selectedFile;
 
-    /**
-     * Load the API's client and auth2 modules.
-     * Call the initClient function after the modules load.
-     */
     function handleClientLoad() {
       gapi.load('client:auth2', initClient);
     }
 
     function initClient() {
-      // Initialize the gapi.client object, which app uses to make API requests.
-      // Get API key and client ID from API Console.
-      // 'scope' field specifies space-delimited list of access scopes
-
       gapi.client.init({
         'clientId': '',
         'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
@@ -51,24 +42,27 @@
         });
         $("#select-file").bind("change", function () {
           selectedFile = $("#select-file").prop("files")[0];
-          console.log(selectedFile)
-          $("#selected-file-name").append(selectedFile.size," bytes") 
-          $("#selected-file-name").append(
-          `
+          $('#upload-file-button').prop('disabled', false).text('Upload file').show()
+          $("#vid-details").empty()
+          $("#vid-details").append(`<span id="vid-size">`, selectedFile.size, ` bytes</span>`)
+          $("#vid-details").append(
+            `
           <br>
-          <input id="vid-title" type="text">
+          Title <input id="vid-title" type="text">
           <br>
-          <input id="vid-tags" type="text">
+          Tags <input id="vid-tags" type="text">
           <br>
-          <input id="vid-descrition" type="text">
+          Description <input id="vid-description" type="text">
           <br>
-          <input id="vid-privacy" type="text">
+          Privacy
+          <br>
+          <form id="vid-privacy-form">
+          <input type="radio" id="vid-privacy" name="vid-privacy" value="public" checked> Public<br>
+          <input type="radio" id="vid-privacy" name="vid-privacy" value="private"> Private<br>
+          <input type="radio" id="vid-privacy" name="vid-privacy" value="unlisted"> Unlisted<br>
+          </form>
           `
           )
-          $("#selected-file-name").append(
-            '<br><button id="upload-file-button">Upload file</button>'
-          ) 
-          
         });
       });
     }
@@ -85,9 +79,8 @@
       // Toggle button text and displayed statement based on current auth status.
       if (isAuthorized) {
         // <button id="execute-request-button">Authorize</button>
-        // console.log(user)
         $("#current-user").append(user.w3.ig)
-        defineRequest();
+        // defineRequest();
       }
     }
 
@@ -101,9 +94,9 @@
       for (var p in properties) {
         var value = properties[p];
         if (p && p.substr(-2, 2) == '[]') {
-          var adjustedName = p.replace('[]', '');
+          var adjustedName = p.replace('[]', '',);
           if (value) {
-            normalizedProps[adjustedName] = value.split(',');
+            normalizedProps[adjustedName] = value.replace(' ','').split(',');
           }
           delete normalizedProps[p];
         }
@@ -169,84 +162,29 @@
       return GoogleAuth.currentUser.get().getAuthResponse(true).access_token;
     }
 
-    /**
-     * Helper for implementing retries with backoff. Initial retry
-     * delay is 1 second, increasing by 2x (+jitter) for subsequent retries
-     *
-     * @constructor
-     */
     var RetryHandler = function () {
       this.interval = 1000; // Start at one second
       this.maxInterval = 60 * 1000; // Don't wait longer than a minute 
     };
 
-    /**
-     * Invoke the function after waiting
-     *
-     * @param {function} fn Function to invoke
-     */
     RetryHandler.prototype.retry = function (fn) {
       setTimeout(fn, this.interval);
       this.interval = this.nextInterval_();
     };
 
-    /**
-     * Reset the counter (e.g. after successful request.)
-     */
     RetryHandler.prototype.reset = function () {
       this.interval = 1000;
     };
 
-    /**
-     * Calculate the next wait time.
-     * @return {number} Next wait interval, in milliseconds
-     *
-     * @private
-     */
     RetryHandler.prototype.nextInterval_ = function () {
       var interval = this.interval * 2 + this.getRandomInt_(0, 1000);
       return Math.min(interval, this.maxInterval);
     };
 
-    /**
-     * Get a random int in the range of min to max. Used to add jitter to wait times.
-     *
-     * @param {number} min Lower bounds
-     * @param {number} max Upper bounds
-     * @private
-     */
     RetryHandler.prototype.getRandomInt_ = function (min, max) {
       return Math.floor(Math.random() * (max - min + 1) + min);
     };
 
-    /**
-     * Helper class for resumable uploads using XHR/CORS. Can upload any
-     * Blob-like item, whether files or in-memory constructs.
-     *
-     * @example
-     * var content = new Blob(["Hello world"], {"type": "text/plain"});
-     * var uploader = new MediaUploader({
-     *   file: content,
-     *   token: accessToken,
-     *   onComplete: function(data) { ... }
-     *   onError: function(data) { ... }
-     * });
-     * uploader.upload();
-     *
-     * @constructor
-     * @param {object} options Hash of options
-     * @param {string} options.token Access token
-     * @param {blob} options.file Blob-like item to upload
-     * @param {string} [options.fileId] ID of file if replacing
-     * @param {object} [options.params] Additional query parameters
-     * @param {string} [options.contentType] Content-type, if overriding the
-     *    type of the blob.
-     * @param {object} [options.metadata] File metadata
-     * @param {function} [options.onComplete] Callback for when upload is complete
-     * @param {function} [options.onProgress] Callback for status of in-progress
-     *    upload
-     * @param {function} [options.onError] Callback if upload fails
-     */
     var MediaUploader = function (options) {
       var noop = function () {};
       this.file = options.file;
@@ -434,19 +372,22 @@
       }
       return url;
     };
-    /***** END BOILERPLATE CODE *****/
-
 
     function defineRequest() {
+      let vidtitle = $("#vid-title").val()
+      let vidtags = $("#vid-tags").val()
+      let viddescription = $("#vid-description").val()
+      let vidprivacy = $("#vid-privacy:checked").val()
+
       var metadata = createResource({
         'snippet.categoryId': '22',
         'snippet.defaultLanguage': '',
-        'snippet.description': 'Description of uploaded video.',
-        'snippet.tags[]': '',
-        'snippet.title': 'Test video upload',
+        'snippet.description': viddescription,
+        'snippet.tags[]': vidtags,
+        'snippet.title': vidtitle,
         'status.embeddable': '',
         'status.license': '',
-        'status.privacyStatus': 'private',
+        'status.privacyStatus': vidprivacy,
         'status.publicStatsViewable': ''
       });
       var token = getAccessToken();
@@ -456,7 +397,7 @@
       }
 
       if (!selectedFile) {
-        // alert("You need to select a file to proceed.");
+        alert("You need to select a file to proceed.");
         return;
       }
       var params = {
@@ -479,13 +420,17 @@
           }
         }.bind(this),
         onProgress: function (data) {
+          $('#upload-file-button').prop('disabled', true).text('Uploading...')          
+          $('#select-file').prop('disabled', true)          
           var currentTime = Date.now();
           console.log('Progress: ' + data.loaded + ' bytes loaded out of ' + data.total);
           var totalBytes = data.total;
         }.bind(this),
         onComplete: function (data) {
+          $('#upload-file-button').text('Upload Complete').hide()          
+          $('#select-file').prop('disabled', false)          
           var uploadResponse = JSON.parse(data);
-          console.log('Upload complete for video ' + uploadResponse.id);
+          $("#vid-details").append('<span>Upload complete for video:<br> <a href="https://www.youtube.com/watch?v=' + uploadResponse.id + '">https://www.youtube.com/watch?v=' + uploadResponse.id + '</a></span>');
         }.bind(this)
       });
 
@@ -495,10 +440,9 @@
 
   <button id="execute-request-button">Authorize</button>
   <p id="current-user"></p>
-  <!-- <button id="select-file-button">Select file</button> -->
   <input id="select-file" type="file">
-  <p id="selected-file-name"></p>
-  <!-- <button id="upload-file-button">Upload file</button> -->
+  <p id="vid-details"></p>
+  <button id="upload-file-button">Upload file</button>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
   <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()">
