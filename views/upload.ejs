@@ -18,7 +18,7 @@
 
     function initClient() {
       gapi.client.init({
-        'clientId': '',
+        'clientId': '721555634747-lnb3tang4qeiluuo09k4hvcedct6nf9c.apps.googleusercontent.com',
         'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
         'scope': 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner'
       }).then(function () {
@@ -79,7 +79,7 @@
       // Toggle button text and displayed statement based on current auth status.
       if (isAuthorized) {
         // <button id="execute-request-button">Authorize</button>
-        $("#current-user").append(user.w3.ig)
+        $("#current-user").append(user.w3.ig)        
         // defineRequest();
       }
     }
