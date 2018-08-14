@@ -223,6 +223,7 @@
             // See https://developers.google.com/youtube/analytics/v1/available_reports for details
             // on different filters and metrics you can request when dimensions=day.
             metrics: 'audienceWatchRatio',
+            metrics: 'views',
             filters: 'video==' + videoId
           });
 
@@ -232,6 +233,7 @@
             if ('error' in response) {
               displayMessage(response.error.message);
             } else {
+              console.log('response from server', response)
               displayChart(videoId, response);
             }
           });
