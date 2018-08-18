@@ -162,6 +162,16 @@
             aElement.text(title);
 
             liElement.append(aElement);
+            liElement.append('<div> Likes: ' + this.statistics.likeCount + ' Dislikes: ' + this.statistics.dislikeCount + "</div>")
+            
+            var ratingRatio
+            if (this.statistics.dislikeCount != 0) {
+              ratingRatio = this.statistics.likeCount / this.statistics.dislikeCount
+            } else {
+              ratingRatio = 'cannot be calculated for this video'
+            }
+            
+            liElement.append('<div> Likes/Dislike Ratio ' + ratingRatio + "</div> </br> ")
             videoList.append(liElement);
           });
 
