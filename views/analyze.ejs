@@ -148,6 +148,11 @@
               var title = this.snippet.title;
               var videoId = this.id;
 
+              buildApiRequest('GET',
+                '/youtube/v3/commentThreads',
+                {'part': 'snippet,replies',
+                 'videoId': 'XR3Sc2uEv9w'});
+
               var liElement = $('<li id='+videoId+'>');
               liElement.text(title);
               videoList.append(liElement);
@@ -171,9 +176,11 @@
       return params;
     }
 
-    function executeRequest(request) {
+    function executeRequest(request, videoID) {
       request.execute(function (response) {
-        console.log(response);
+        console.log('execution result', response);
+        let commentsThread = response
+        return commentsThread
       });
     }
 
@@ -195,7 +202,7 @@
           'params': params
         });
       }
-      executeRequest(request);
+      executeRequest(request, params.videoId);
     }
 
     /**
