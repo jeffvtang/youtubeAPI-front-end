@@ -179,8 +179,11 @@
     function executeRequest(request, videoID) {
       request.execute(function (response) {
         console.log('execution result', response);
-        let commentsThread = response
-        return commentsThread
+        response.items.forEach(comment => {
+          let commentDetails = comment.snippet.topLevelComment.snippet
+          // console.log('comment', commentDetails.textDisplay);
+          $('#1OQBXYIUtp4').append('<div>'+commentDetails.textDisplay+'</div>')
+        });
       });
     }
 
