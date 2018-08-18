@@ -8,6 +8,15 @@
 <body>
   <%- include partials/navigation.ejs %>
     <h1>Analytics</h1>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+    google.charts.load('current', {
+      packages: ['corechart']
+    });
+    google.charts.setOnLoadCallback(drawChart);
+
+    </script>
+
     <script>
     var GoogleAuth;
 
@@ -69,6 +78,7 @@
           channelId = response.items[0].id;
           // console.log('userchannel response', response)
           var uploadsListId = response.items[0].contentDetails.relatedPlaylists.uploads;
+
           let stats = response.items[0].statistics
           $("#api-data").append(`<div> Total Videos: ${stats.videoCount} </div>`)
           $("#api-data").append(`<div> Number of Subscribers: ${stats.subscriberCount} </div>`)
@@ -84,9 +94,93 @@
 
           $("#api-data").append(`<div> Comments/Views Ratio ${commentViewRatio} </div>`)
 
+          displayVideoAnalytics(channelId)
           getPlaylistItems(uploadsListId);
         }
       });
+    }
+
+    function displayVideoAnalytics(channelId, videoId) {
+      if (channelId) {
+        var today = new Date();
+
+        var request = gapi.client.youtubeAnalytics.reports.query({
+          'start-date': '2014-11-01',
+          'end-date': formatDateString(today),
+          ids: 'channel==' + channelId,
+          dimensions: 'day',
+          metrics: 'views',
+          if (videoId) {
+            filters: 'video==' + videoId
+          }
+        });
+
+        request.execute(function(response) {
+          // This function is called regardless of whether the request succeeds.
+          // The response either has valid analytics data or an error message.
+          if ('error' in response) {
+            console.log(response.error);
+          } else {
+            // console.log('response from server', response)
+            // displayChart(videoId, response);
+            displayChart(response, videoId)
+            console.log('success', response)
+          }
+        });
+      } else {
+        console.log('The YouTube user id for the current user is not available.');
+      }
+    }
+
+    function displayChart(response, videoId) {
+      if ('rows' in response) {
+
+        // The columnHeaders property contains an array of objects representing
+        // each column's title – e.g.: [{name:"day"},{name:"views"}]
+        // We need these column titles as a simple array, so we call jQuery.map()
+        // to get each element's "name" property and create a new array that only
+        // contains those values.
+        var columns = $.map(response.columnHeaders, function(item) {
+          return item.name;
+        });
+        // The google.visualization.arrayToDataTable() wants an array of arrays.
+        // The first element is an array of column titles, calculated above as
+        // "columns". The remaining elements are arrays that each represent
+        // a row of data. Fortunately, response.rows is already in this format,
+        // so it can just be concatenated.
+        // See https://developers.google.com/chart/interactive/docs/datatables_dataviews#arraytodatatable
+        var chartDataArray = [columns].concat(response.rows);
+        var chartDataTable = google.visualization.arrayToDataTable(chartDataArray);
+
+        var chart = new google.visualization.LineChart(document.getElementById('chart'));
+        chart.draw(chartDataTable, {
+          // Additional options can be set if desired.
+          // See https://developers.google.com/chart/interactive/docs/reference#visdraw
+          width: 800,
+          height: 300,
+          is3D: false,
+          title: 'Video Views over Time'
+        });
+      } else {
+        console.log('No data available for channel');
+      }
+    }
+
+
+    function formatDateString(date) {
+      var yyyy = date.getFullYear().toString();
+      var mm = padToTwoCharacters(date.getMonth() + 1);
+      var dd = padToTwoCharacters(date.getDate());
+
+      return yyyy + '-' + mm + '-' + dd;
+    }
+
+    function padToTwoCharacters(number) {
+      if (number < 10) {
+        return '0' + number;
+      } else {
+        return number.toString();
+      }
     }
 
     function getPlaylistItems(listId) {
@@ -159,8 +253,6 @@
       });
     }
 
-
-
     function removeEmptyParams(params) {
       for (var p in params) {
         if (!params[p] || params[p] == 'undefined') {
@@ -182,7 +274,7 @@
             // console.log('comment', commentDetails.textDisplay);
             commentDetails.publishedAt = new Date()
             let commentDiv =
-            `<div>
+              `<div>
             User: ${commentDetails.authorDisplayName} - ${commentDetails.publishedAt.toLocaleDateString('en-us', {year: 'numeric', month: 'long', day: 'numeric'})} </br>
             Comment: ${commentDetails.textDisplay} 
             </div> </br>`
@@ -230,6 +322,7 @@
     <p id="current-user"></p>
 
     <div id="api-data"></div>
+    <div id="chart"></div>
     <ul id="video-list">Videos</ul>
 
 
