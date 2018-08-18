@@ -12,14 +12,16 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      authkey: '',
-      user: ''
+      user: '',
+      token: '',
     }
   }
 
   success = response => {
     console.log('success', response)
-    this.setState({user: response.w3.ig})
+    console.log('user', response.w3.ig)
+    console.log('access token', response.accessToken)
+    this.setState({user: response.w3.ig, token: response.accessToken})
   }
 
   error = response => {
@@ -32,7 +34,7 @@ class App extends Component {
 
   logout = () => {
     console.log('logout')
-    this.setState({user: ''})
+    this.setState({user: '', token: ''})
   }
 
   render() {
@@ -44,22 +46,22 @@ class App extends Component {
           onSuccess={this.success}
           onFailure={this.error}
           onRequest={this.loading}
-          responseType="id_token"
+          responseType="permission"
           isSignedIn={true}
           prompt="consent"
         > {this.state.user === '' ? 'Login' : this.state.user} </GoogleLogin>
-        <GoogleLogout 
+        |<GoogleLogout 
         onLogoutSuccess={this.logout}/>
         <div>
           <Link to="/">Home</Link> |
           {/* <Link to="/login">Login</Link> | */}
-          <Link to="/data">Data</Link> |
+          <Link to="/upload">Upload</Link> |
           <Link to="/analytics">Analytics</Link>
         </div>
         <Router>
           {/* <Login path="/login" auth={this.login} /> */}
-          <Data path="/data" />
-          <Analytics path="/analytics" />
+          <Data path="/upload" user={this.state.user} token={this.state.token}/>
+          <Analytics path="/analytics" user={this.state.user} token={this.state.token}/>
         </Router>
       </div>
     );
