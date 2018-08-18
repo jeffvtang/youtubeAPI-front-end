@@ -12,7 +12,7 @@
   <script src="//www.google.com/jsapi"></script>
   <script>
     (function () {
-      var OAUTH2_CLIENT_ID = '';
+      var OAUTH2_CLIENT_ID = '721555634747-lnb3tang4qeiluuo09k4hvcedct6nf9c.apps.googleusercontent.com';
       var OAUTH2_SCOPES = [
         'https://www.googleapis.com/auth/yt-analytics.readonly',
         'https://www.googleapis.com/auth/youtube.readonly'
@@ -222,7 +222,7 @@
             dimensions: 'elapsedVideoTimeRatio',
             // See https://developers.google.com/youtube/analytics/v1/available_reports for details
             // on different filters and metrics you can request when dimensions=day.
-            metrics: {'audienceWatchRatio', 'views', 'likes', 'dislikes', 'comments'}
+            metrics: 'audienceWatchRatio', 'views', 'likes', 'dislikes', 'comments'
             filters: 'video==' + videoId
           });
 
