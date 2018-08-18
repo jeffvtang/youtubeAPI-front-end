@@ -40,7 +40,7 @@
 
     function handleAuthClick(event) {
       // Sign user in after click on auth button.
-      GoogleAuth.signIn()
+      GoogleAuth.signIn().then(reponse => location.reload())
     }
 
     function setSigninStatus() {

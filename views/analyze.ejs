@@ -94,76 +94,83 @@
       });
     }
 
-      function getPlaylistItems(listId) {
-        // https://developers.google.com/youtube/v3/docs/playlistItems/list
-        var request = gapi.client.youtube.playlistItems.list({
-          playlistId: listId,
-          part: 'snippet',
-          maxResults: 30
-        });
+    function getPlaylistItems(listId) {
+      // https://developers.google.com/youtube/v3/docs/playlistItems/list
+      var request = gapi.client.youtube.playlistItems.list({
+        playlistId: listId,
+        part: 'snippet',
+        maxResults: 30
+      });
 
-        request.execute(function (response) {
-          if ('error' in response) {
-            displayMessage(response.error.message);
-          } else {
-            if ('items' in response) {
-              // jQuery.map() iterates through all of the items in the response and
-              // creates a new array that only contains the specific property we're
-              // looking for: videoId.
-              var videoIds = $.map(response.items, function (item) {
-                return item.snippet.resourceId.videoId;
-              });
-
-              // Now that we know the IDs of all the videos in the uploads list,
-              // we can retrieve info about each video.
-              getVideoMetadata(videoIds);
-            } else {
-              displayMessage('There are no videos in your channel.');
-            }
-          }
-        });
-      }
-
-      // Given an array of video ids, obtains metadata about each video and then
-      // uses that metadata to display a list of videos to the user.
-      function getVideoMetadata(videoIds) {
-        // https://developers.google.com/youtube/v3/docs/videos/list
-        var request = gapi.client.youtube.videos.list({
-          // The 'id' property value is a comma-separated string of video IDs.
-          id: videoIds.join(','),
-          part: 'id,snippet,statistics'
-        });
-
-        request.execute(function (response) {
-          if ('error' in response) {
-            displayMessage(response.error.message);
-          } else {
-            console.log('videos response', response)
-            // Get the jQuery wrapper for #video-list once outside the loop.
-            var videoList = $('#video-list');
-            $.each(response.items, function () {
-              // if (this.statistics.viewCount == 0) {
-              //   return;
-              // }
-              var title = this.snippet.title;
-              var videoId = this.id;
-
-              buildApiRequest('GET',
-                '/youtube/v3/commentThreads',
-                {'part': 'snippet,replies',
-                 'videoId': 'XR3Sc2uEv9w'});
-
-              var liElement = $('<li id='+videoId+'>');
-              liElement.text(title);
-              videoList.append(liElement);
+      request.execute(function(response) {
+        if ('error' in response) {
+          displayMessage(response.error.message);
+        } else {
+          if ('items' in response) {
+            // jQuery.map() iterates through all of the items in the response and
+            // creates a new array that only contains the specific property we're
+            // looking for: videoId.
+            var videoIds = $.map(response.items, function(item) {
+              return item.snippet.resourceId.videoId;
             });
 
-            if (videoList.children().length == 0) {
-              displayMessage('Your channel does not have any videos that have been viewed.');
-            }
+            // Now that we know the IDs of all the videos in the uploads list,
+            // we can retrieve info about each video.
+            getVideoMetadata(videoIds);
+          } else {
+            displayMessage('There are no videos in your channel.');
           }
-        });
-      }
+        }
+      });
+    }
+
+    // Given an array of video ids, obtains metadata about each video and then
+    // uses that metadata to display a list of videos to the user.
+    function getVideoMetadata(videoIds) {
+      // https://developers.google.com/youtube/v3/docs/videos/list
+      var request = gapi.client.youtube.videos.list({
+        // The 'id' property value is a comma-separated string of video IDs.
+        id: videoIds.join(','),
+        part: 'id,snippet,statistics'
+      });
+
+      request.execute(function(response) {
+        if ('error' in response) {
+          displayMessage(response.error.message);
+        } else {
+          console.log('videos response', response)
+          // Get the jQuery wrapper for #video-list once outside the loop.
+          var videoList = $('#video-list');
+          $.each(response.items, function() {
+            // if (this.statistics.viewCount == 0) {
+            //   return;
+            // }
+            var title = this.snippet.title;
+            var videoId = this.id;
+
+            buildApiRequest('GET',
+              '/youtube/v3/commentThreads', {
+                'part': 'snippet,replies',
+                'videoId': videoId
+              });
+
+            var liElement = $('<li id=' + videoId + '>');
+            var aElement = $('<a>');
+            // The dummy href value of '#' ensures that the browser renders the
+            // <a> element as a clickable link.
+            aElement.attr('href', 'https://www.youtube.com/watch?v=' + videoId);
+            aElement.text(title);
+
+            liElement.append(aElement);
+            videoList.append(liElement);
+          });
+
+          if (videoList.children().length == 0) {
+            displayMessage('Your channel does not have any videos that have been viewed.');
+          }
+        }
+      });
+    }
 
 
 
@@ -176,14 +183,26 @@
       return params;
     }
 
-    function executeRequest(request, videoID) {
-      request.execute(function (response) {
-        console.log('execution result', response);
-        response.items.forEach(comment => {
-          let commentDetails = comment.snippet.topLevelComment.snippet
-          // console.log('comment', commentDetails.textDisplay);
-          $('#1OQBXYIUtp4').append('<div>'+commentDetails.textDisplay+'</div>')
-        });
+    function executeRequest(request, videoId) {
+      request.execute(function(response) {
+        console.log('response', response)
+        if (response.error) {
+          $('#' + videoId).append('<div> Could not retrieve comments. Error message: ' + response.error.errors[0].reason + '</div> </br>')
+        }
+        else if (response.items.length > 0) {
+          response.items.forEach(comment => {
+            let commentDetails = comment.snippet.topLevelComment.snippet
+            // console.log('comment', commentDetails.textDisplay);
+            $('#' + videoId).append('<div> Comment Text: ' + commentDetails.textDisplay + '</div> </br>')
+            // commentDetails.authorDisplayName
+            // commentDetails.authorProfileImageUrl
+            // commentDetails.likeCount
+            // commentDetails.publishedAt
+            // commentDetails.updatedAt
+          });
+        } else {
+          $('#' + videoId).append('<div> No comments on this video </div> </br>')
+        }
       });
     }
 
@@ -224,7 +243,7 @@
     <p id="current-user"></p>
 
     <div id="api-data"></div>
-    <ul id="video-list"></ul>
+    <ul id="video-list">Videos</ul>
 
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
