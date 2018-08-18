@@ -23,16 +23,13 @@
       }).then(function() {
         GoogleAuth = gapi.auth2.getAuthInstance();
 
-        // Listen for sign-in state changes.
         GoogleAuth.isSignedIn.listen(updateSigninStatus);
 
-        // Handle initial sign-in state. (Determine if user is already signed in.)
         setSigninStatus();
       });
     }
 
     function handleAuthClick(event) {
-      // Sign user in after click on auth button.
       GoogleAuth.signIn();
     }
 
@@ -40,7 +37,6 @@
       var user = GoogleAuth.currentUser.get();
       isAuthorized = user.hasGrantedScopes(
         'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly');
-      // Toggle button text and displayed statement based on current auth status.
       if (isAuthorized) {
         $("#current-user").append(user.w3.ig)
         loadAPIClientInterfaces()
@@ -55,47 +51,45 @@
       console.log('made it here');
       gapi.client.load('youtube', 'v3', function() {
         gapi.client.load('youtubeAnalytics', 'v1', function() {
-          // After both client interfaces load, use the Data API to request
-          // information about the authenticated user's channel.
           getUserChannel();
         });
       });
     }
 
-
-    // Calls the Data API to retrieve info about the currently authenticated
-    // user's YouTube channel.
     function getUserChannel() {
-      // https://developers.google.com/youtube/v3/docs/channels/list
       var request = gapi.client.youtube.channels.list({
-        // "mine: true" indicates that you want to retrieve the authenticated user's channel.
         mine: true,
         part: 'id,contentDetails,statistics'
       });
 
       request.execute(function(response) {
         if ('error' in response) {
-          displayMessage(response.error.message);
+          console.log(response.error.message);
         } else {
-          // We will need the channel's channel ID to make calls to the
-          // Analytics API. The channel ID looks like "UCdLFeWKpkLhkguiMZUp8lWA".
           channelId = response.items[0].id;
-          console.log('userchannel response', response)
-          // This string, of the form "UUdLFeWKpkLhkguiMZUp8lWA", is a unique ID
-          // for a playlist of videos uploaded to the authenticated user's channel.
+          // console.log('userchannel response', response)
           var uploadsListId = response.items[0].contentDetails.relatedPlaylists.uploads;
           let stats = response.items[0].statistics
-          $("#api-data").append('<div> Total Videos:', stats.videoCount, '</div>')
-          $("#api-data").append('<div> Number of Subscribers:', stats.subscriberCount, '</div>')
-          $("#api-data").append('<div> Total Comments : Total Views', stats.commentCount, ':', stats.viewCount, '</div>')
-          // Use the uploads playlist ID to retrieve the list of uploaded videos.
+          $("#api-data").append(`<div> Total Videos: ${stats.videoCount} </div>`)
+          $("#api-data").append(`<div> Number of Subscribers: ${stats.subscriberCount} </div>`)
+          $("#api-data").append(`<div> Total Comments: ${stats.commentCount} </div>`)
+          $("#api-data").append(`<div> Total Views: ${stats.viewCount} </div>`)
+
+          let commentViewRatio
+          if (stats.viewCount != 0) {
+            commentViewRatio = stats.commentCount / stats.viewCount
+          } else {
+            commentViewRatio = 'cannot be calculated for this video'
+          }
+
+          $("#api-data").append(`<div> Comments/Views Ratio ${commentViewRatio} </div>`)
+
           getPlaylistItems(uploadsListId);
         }
       });
     }
 
     function getPlaylistItems(listId) {
-      // https://developers.google.com/youtube/v3/docs/playlistItems/list
       var request = gapi.client.youtube.playlistItems.list({
         playlistId: listId,
         part: 'snippet',
@@ -104,42 +98,31 @@
 
       request.execute(function(response) {
         if ('error' in response) {
-          displayMessage(response.error.message);
+          console.log(response.error);
         } else {
           if ('items' in response) {
-            // jQuery.map() iterates through all of the items in the response and
-            // creates a new array that only contains the specific property we're
-            // looking for: videoId.
             var videoIds = $.map(response.items, function(item) {
               return item.snippet.resourceId.videoId;
             });
-
-            // Now that we know the IDs of all the videos in the uploads list,
-            // we can retrieve info about each video.
             getVideoMetadata(videoIds);
           } else {
-            displayMessage('There are no videos in your channel.');
+            $('#video-list').append('<li>There are no videos in your channel.</li>');
           }
         }
       });
     }
 
-    // Given an array of video ids, obtains metadata about each video and then
-    // uses that metadata to display a list of videos to the user.
     function getVideoMetadata(videoIds) {
-      // https://developers.google.com/youtube/v3/docs/videos/list
       var request = gapi.client.youtube.videos.list({
-        // The 'id' property value is a comma-separated string of video IDs.
         id: videoIds.join(','),
         part: 'id,snippet,statistics'
       });
 
       request.execute(function(response) {
         if ('error' in response) {
-          displayMessage(response.error.message);
+          console.log(response.error);
         } else {
           console.log('videos response', response)
-          // Get the jQuery wrapper for #video-list once outside the loop.
           var videoList = $('#video-list');
           $.each(response.items, function() {
             // if (this.statistics.viewCount == 0) {
@@ -156,28 +139,22 @@
 
             var liElement = $('<li id=' + videoId + '>');
             var aElement = $('<a>');
-            // The dummy href value of '#' ensures that the browser renders the
-            // <a> element as a clickable link.
             aElement.attr('href', 'https://www.youtube.com/watch?v=' + videoId);
             aElement.text(title);
 
             liElement.append(aElement);
             liElement.append('<div> Likes: ' + this.statistics.likeCount + ' Dislikes: ' + this.statistics.dislikeCount + "</div>")
-            
+
             var ratingRatio
             if (this.statistics.dislikeCount != 0) {
               ratingRatio = this.statistics.likeCount / this.statistics.dislikeCount
             } else {
               ratingRatio = 'cannot be calculated for this video'
             }
-            
-            liElement.append('<div> Likes/Dislike Ratio ' + ratingRatio + "</div> </br> ")
+
+            liElement.append(`<div> Likes/Dislike Ratio ${ratingRatio} </div> </br>`)
             videoList.append(liElement);
           });
-
-          if (videoList.children().length == 0) {
-            displayMessage('Your channel does not have any videos that have been viewed.');
-          }
         }
       });
     }
@@ -198,17 +175,24 @@
         console.log('response', response)
         if (response.error) {
           $('#' + videoId).append('<div> Could not retrieve comments. Error message: ' + response.error.errors[0].reason + '</div> </br>')
-        }
-        else if (response.items.length > 0) {
+        } else if (response.items.length > 0) {
+          $('#' + videoId).append('<div> Comments: </div>')
           response.items.forEach(comment => {
             let commentDetails = comment.snippet.topLevelComment.snippet
             // console.log('comment', commentDetails.textDisplay);
-            $('#' + videoId).append('<div> Comment Text: ' + commentDetails.textDisplay + '</div> </br>')
-            // commentDetails.authorDisplayName
-            // commentDetails.authorProfileImageUrl
-            // commentDetails.likeCount
-            // commentDetails.publishedAt
-            // commentDetails.updatedAt
+            commentDetails.publishedAt = new Date()
+            let commentDiv =
+            `<div>
+            User: ${commentDetails.authorDisplayName} - ${commentDetails.publishedAt.toLocaleDateString('en-us', {year: 'numeric', month: 'long', day: 'numeric'})} </br>
+            Comment: ${commentDetails.textDisplay} 
+            </div> </br>`
+            $('#' + videoId).append(commentDiv)
+            /*  Available comment details
+                commentDetails.authorDisplayName
+                commentDetails.authorProfileImageUrl
+                commentDetails.likeCount
+                commentDetails.publishedAt
+                commentDetails.updatedAt */
           });
         } else {
           $('#' + videoId).append('<div> No comments on this video </div> </br>')
@@ -235,13 +219,6 @@
         });
       }
       executeRequest(request, params.videoId);
-    }
-
-    /**
-     * Retrieve the access token for the currently authorized user.
-     */
-    function getAccessToken(event) {
-      return GoogleAuth.currentUser.get().getAuthResponse(true).access_token;
     }
 
     function getAccessToken(event) {
