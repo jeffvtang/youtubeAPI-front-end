@@ -6,6 +6,7 @@
 </head>
 
 <body>
+  <%- include partials/navigation.ejs %>    
   <h1>Upload</h1>
   <script>
     var GoogleAuth;
@@ -19,7 +20,7 @@
       gapi.client.init({
         'clientId': '721555634747-lnb3tang4qeiluuo09k4hvcedct6nf9c.apps.googleusercontent.com',
         'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
-        'scope': 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner'
+        'scope': 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly'
       }).then(function () {
         GoogleAuth = gapi.auth2.getAuthInstance();
 
@@ -29,10 +30,6 @@
         // Handle initial sign-in state. (Determine if user is already signed in.)
         setSigninStatus();
 
-        // Call handleAuthClick function when user clicks on "Authorize" button.
-        $('#execute-request-button').click(function () {
-          handleAuthClick(event);
-        });
         $("#select-file-button").click(function () {
           $("#select-file").click();
         });
@@ -66,15 +63,11 @@
       });
     }
 
-    function handleAuthClick(event) {
-      // Sign user in after click on auth button.
-      GoogleAuth.signIn();
-    }
 
     function setSigninStatus() {
       var user = GoogleAuth.currentUser.get();
       isAuthorized = user.hasGrantedScopes(
-        'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner');
+        'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly');
       // Toggle button text and displayed statement based on current auth status.
       if (isAuthorized) {
         // <button id="execute-request-button">Authorize</button>
@@ -437,7 +430,6 @@
     }
   </script>
 
-  <button id="execute-request-button">Authorize</button>
   <p id="current-user"></p>
   <input id="select-file" type="file">
   <p id="vid-details"></p>

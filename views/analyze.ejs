@@ -1,0 +1,227 @@
+<html>
+
+<head>
+  <title>Analyze</title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+  <%- include partials/navigation.ejs %>
+    <h1>Analytics</h1>
+    <script>
+    var GoogleAuth;
+
+    function handleClientLoad() {
+      gapi.load('client:auth2', initClient);
+    }
+
+    function initClient() {
+      gapi.client.init({
+        'clientId': '721555634747-lnb3tang4qeiluuo09k4hvcedct6nf9c.apps.googleusercontent.com',
+        'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
+        'scope': 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly'
+      }).then(function() {
+        GoogleAuth = gapi.auth2.getAuthInstance();
+
+        // Listen for sign-in state changes.
+        GoogleAuth.isSignedIn.listen(updateSigninStatus);
+
+        // Handle initial sign-in state. (Determine if user is already signed in.)
+        setSigninStatus();
+      });
+    }
+
+    function handleAuthClick(event) {
+      // Sign user in after click on auth button.
+      GoogleAuth.signIn();
+    }
+
+    function setSigninStatus() {
+      var user = GoogleAuth.currentUser.get();
+      isAuthorized = user.hasGrantedScopes(
+        'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly');
+      // Toggle button text and displayed statement based on current auth status.
+      if (isAuthorized) {
+        $("#current-user").append(user.w3.ig)
+        loadAPIClientInterfaces()
+      }
+    }
+
+    function updateSigninStatus(isSignedIn) {
+      setSigninStatus();
+    }
+
+    function loadAPIClientInterfaces() {
+      console.log('made it here');
+      gapi.client.load('youtube', 'v3', function() {
+        gapi.client.load('youtubeAnalytics', 'v1', function() {
+          // After both client interfaces load, use the Data API to request
+          // information about the authenticated user's channel.
+          getUserChannel();
+        });
+      });
+    }
+
+
+    // Calls the Data API to retrieve info about the currently authenticated
+    // user's YouTube channel.
+    function getUserChannel() {
+      // https://developers.google.com/youtube/v3/docs/channels/list
+      var request = gapi.client.youtube.channels.list({
+        // "mine: true" indicates that you want to retrieve the authenticated user's channel.
+        mine: true,
+        part: 'id,contentDetails,statistics'
+      });
+
+      request.execute(function(response) {
+        if ('error' in response) {
+          displayMessage(response.error.message);
+        } else {
+          // We will need the channel's channel ID to make calls to the
+          // Analytics API. The channel ID looks like "UCdLFeWKpkLhkguiMZUp8lWA".
+          channelId = response.items[0].id;
+          console.log('userchannel response', response)
+          // This string, of the form "UUdLFeWKpkLhkguiMZUp8lWA", is a unique ID
+          // for a playlist of videos uploaded to the authenticated user's channel.
+          var uploadsListId = response.items[0].contentDetails.relatedPlaylists.uploads;
+          let stats = response.items[0].statistics
+          $("#api-data").append('<div> Total Videos:', stats.videoCount, '</div>')
+          $("#api-data").append('<div> Number of Subscribers:', stats.subscriberCount, '</div>')
+          $("#api-data").append('<div> Total Comments : Total Views', stats.commentCount, ':', stats.viewCount, '</div>')
+          // Use the uploads playlist ID to retrieve the list of uploaded videos.
+          getPlaylistItems(uploadsListId);
+        }
+      });
+    }
+
+      function getPlaylistItems(listId) {
+        // https://developers.google.com/youtube/v3/docs/playlistItems/list
+        var request = gapi.client.youtube.playlistItems.list({
+          playlistId: listId,
+          part: 'snippet',
+          maxResults: 30
+        });
+
+        request.execute(function (response) {
+          if ('error' in response) {
+            displayMessage(response.error.message);
+          } else {
+            if ('items' in response) {
+              // jQuery.map() iterates through all of the items in the response and
+              // creates a new array that only contains the specific property we're
+              // looking for: videoId.
+              var videoIds = $.map(response.items, function (item) {
+                return item.snippet.resourceId.videoId;
+              });
+
+              // Now that we know the IDs of all the videos in the uploads list,
+              // we can retrieve info about each video.
+              getVideoMetadata(videoIds);
+            } else {
+              displayMessage('There are no videos in your channel.');
+            }
+          }
+        });
+      }
+
+      // Given an array of video ids, obtains metadata about each video and then
+      // uses that metadata to display a list of videos to the user.
+      function getVideoMetadata(videoIds) {
+        // https://developers.google.com/youtube/v3/docs/videos/list
+        var request = gapi.client.youtube.videos.list({
+          // The 'id' property value is a comma-separated string of video IDs.
+          id: videoIds.join(','),
+          part: 'id,snippet,statistics'
+        });
+
+        request.execute(function (response) {
+          if ('error' in response) {
+            displayMessage(response.error.message);
+          } else {
+            console.log('videos response', response)
+            // Get the jQuery wrapper for #video-list once outside the loop.
+            var videoList = $('#video-list');
+            $.each(response.items, function () {
+              // if (this.statistics.viewCount == 0) {
+              //   return;
+              // }
+              var title = this.snippet.title;
+              var videoId = this.id;
+
+              var liElement = $('<li id='+videoId+'>');
+              liElement.text(title);
+              videoList.append(liElement);
+            });
+
+            if (videoList.children().length == 0) {
+              displayMessage('Your channel does not have any videos that have been viewed.');
+            }
+          }
+        });
+      }
+
+
+
+    function removeEmptyParams(params) {
+      for (var p in params) {
+        if (!params[p] || params[p] == 'undefined') {
+          delete params[p];
+        }
+      }
+      return params;
+    }
+
+    function executeRequest(request) {
+      request.execute(function (response) {
+        console.log(response);
+      });
+    }
+
+    function buildApiRequest(requestMethod, path, params, properties) {
+      params = removeEmptyParams(params);
+      var request;
+      if (properties) {
+        var resource = createResource(properties);
+        request = gapi.client.request({
+          'body': resource,
+          'method': requestMethod,
+          'path': path,
+          'params': params
+        });
+      } else {
+        request = gapi.client.request({
+          'method': requestMethod,
+          'path': path,
+          'params': params
+        });
+      }
+      executeRequest(request);
+    }
+
+    /**
+     * Retrieve the access token for the currently authorized user.
+     */
+    function getAccessToken(event) {
+      return GoogleAuth.currentUser.get().getAuthResponse(true).access_token;
+    }
+
+    function getAccessToken(event) {
+      return GoogleAuth.currentUser.get().getAuthResponse(true).access_token;
+    }
+
+    </script>
+
+    <p id="current-user"></p>
+
+    <div id="api-data"></div>
+    <ul id="video-list"></ul>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()">
+
+
+    </script>
+</body>
+
+</html>
