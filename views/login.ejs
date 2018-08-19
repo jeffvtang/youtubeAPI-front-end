@@ -47,8 +47,7 @@
     isAuthorized = user.hasGrantedScopes(
       'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly');
     if (isAuthorized) {
-      $("#current-user").empty()
-      $("#current-user").append(user.w3.ig)
+      $("#current-user").text(user.w3.ig)
     }
   }
 
@@ -59,7 +58,8 @@
   </script>
 
   <button id="execute-request-button">Login and Authorize</button>
-  <p id="current-user">Currently Authorized User<br/></p>
+  <div>Currently Authorized User</div>
+  <div id="current-user"></p>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
   <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()"></script>
   <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()"></script>
