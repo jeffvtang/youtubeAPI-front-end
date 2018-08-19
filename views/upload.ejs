@@ -116,7 +116,7 @@
 
     function executeRequest(request) {
       request.execute(function (response) {
-        console.log(response);
+        // console.log(response);
       });
     }
 
@@ -318,7 +318,7 @@
         'status.privacyStatus': vidprivacy,
         'status.publicStatsViewable': ''
       });
-      console.log(metadata)
+      // console.log(metadata)
       var token = getAccessToken();
       if (!token) {
         alert("You need to authorize the request to proceed.");
@@ -352,7 +352,7 @@
           $('#upload-file-button').prop('disabled', true).text('Uploading...')          
           $('#select-file').prop('disabled', true)          
           var currentTime = Date.now();
-          console.log('Progress: ' + data.loaded + ' bytes loaded out of ' + data.total);
+          // console.log('Progress: ' + data.loaded + ' bytes loaded out of ' + data.total);
           var totalBytes = data.total;
         }.bind(this),
         onComplete: function (data) {

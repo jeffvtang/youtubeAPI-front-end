@@ -57,7 +57,7 @@
     }
 
     function loadAPIClientInterfaces() {
-      console.log('made it here');
+      // console.log('made it here');
       gapi.client.load('youtube', 'v3', function() {
         gapi.client.load('youtubeAnalytics', 'v1', function() {
           getUserChannel();
@@ -73,7 +73,7 @@
 
       request.execute(function(response) {
         if ('error' in response) {
-          console.log(response.error.message);
+          // console.log(response.error.message);
         } else {
           channelId = response.items[0].id;
           // console.log('userchannel response', response)
@@ -119,16 +119,16 @@
           // This function is called regardless of whether the request succeeds.
           // The response either has valid analytics data or an error message.
           if ('error' in response) {
-            console.log(response.error);
+            // console.log(response.error);
           } else {
             // console.log('response from server', response)
             // displayChart(videoId, response);
             displayChart(response, videoId)
-            console.log('success', response)
+            // console.log('success', response)
           }
         });
       } else {
-        console.log('The YouTube user id for the current user is not available.');
+        // console.log('The YouTube user id for the current user is not available.');
       }
     }
 
@@ -162,7 +162,7 @@
           title: 'Video Views over Time'
         });
       } else {
-        console.log('No data available for channel');
+        // console.log('No data available for channel');
       }
     }
 
@@ -192,7 +192,7 @@
 
       request.execute(function(response) {
         if ('error' in response) {
-          console.log(response.error);
+          // console.log(response.error);
         } else {
           if ('items' in response) {
             var videoIds = $.map(response.items, function(item) {
@@ -214,9 +214,9 @@
 
       request.execute(function(response) {
         if ('error' in response) {
-          console.log(response.error);
+          // console.log(response.error);
         } else {
-          console.log('videos response', response)
+          // console.log('videos response', response)
           var videoList = $('#video-list');
           $.each(response.items, function() {
             // if (this.statistics.viewCount == 0) {
@@ -264,7 +264,7 @@
 
     function executeRequest(request, videoId) {
       request.execute(function(response) {
-        console.log('response', response)
+        // console.log('response', response)
         if (response.error) {
           $('#' + videoId).append('<div> Could not retrieve comments. Error message: ' + response.error.errors[0].reason + '</div> </br>')
         } else if (response.items.length > 0) {
