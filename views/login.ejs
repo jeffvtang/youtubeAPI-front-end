@@ -20,9 +20,9 @@
 
   function initClient() {
     gapi.client.init({
-      'clientId': '721555634747-lnb3tang4qeiluuo09k4hvcedct6nf9c.apps.googleusercontent.com',
-      'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
-      'scope': 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly'
+      'clientId':'721555634747-lnb3tang4qeiluuo09k4hvcedct6nf9c.apps.googleusercontent.com',
+      'discoveryDocs':['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
+      'scope':'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtubepartner https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.readonly'
     }).then(function() {
       GoogleAuth = gapi.auth2.getAuthInstance();
 
@@ -32,7 +32,7 @@
       // Handle initial sign-in state. (Determine if user is already signed in.)
       setSigninStatus();
 
-      $('#execute-request-button').click(function() {
+      $('#execute-request-button').click(function(event) {
         handleAuthClick(event);
       });
     });
@@ -60,6 +60,7 @@
   <button id="execute-request-button">Login and Authorize</button>
   <p id="current-user">Currently Authorized User<br/></p>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()"></script>
   <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()"></script>
 </body>
 
